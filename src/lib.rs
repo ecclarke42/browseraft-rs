@@ -69,11 +69,9 @@ impl Default for NodeState {
 }
 
 impl Node {
-    pub fn create(id: u32, channel: &str) -> Arc<Self> {
+    fn new(id: u32, channel: &str, rng: &mut OsRng) -> Arc<Self> {
         let channel =
             Arc::new(BroadcastChannel::new(channel).expect("failed to connect to channel"));
-
-        let mut rng = OsRng::new().expect("failed to create RNG");
 
         let node = Self {
             id,
@@ -103,6 +101,17 @@ impl Node {
         node.send(Message::PeerAdded, Recipient::Everyone);
 
         node
+    }
+
+    pub fn create(id: u32, channel: &str) -> Arc<Self> {
+        let mut rng = OsRng::new().expect("failed to create RNG");
+        Self::new(id, channel, &mut rng)
+    }
+
+    pub fn create_rand(channel: &str) -> Arc<Self> {
+        let mut rng = OsRng::new().expect("failed to create RNG");
+        let id = rng.gen();
+        Self::new(id, channel, &mut rng)
     }
 
     pub fn stop(&self) {
