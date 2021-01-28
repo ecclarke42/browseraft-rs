@@ -3,7 +3,7 @@ name = "browseraft"
 version = "0.1.0"
 authors = ["Elliott Clarke <ecclarke42@gmail.com>"]
 edition = "2018"
-repository = ["https://github.com/ecclarke42/browseraft-rs"]
+repository = "https://github.com/ecclarke42/browseraft-rs"
 
 [dependencies]
 gloo = "0.2.1"
