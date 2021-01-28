@@ -3,13 +3,10 @@ name = "browseraft"
 version = "0.1.0"
 authors = ["Elliott Clarke <ecclarke42@gmail.com>"]
 edition = "2018"
-
-[lib]
-# crate-type = ["cdylib"]
+repository = ["https://github.com/ecclarke42/browseraft-rs"]
 
 [dependencies]
 gloo = "0.2.1"
-# js-sys = "0.3"
 rand = { version = "0.6", features = ["wasm-bindgen"]}
 serde = { version = "1", features = ["derive"]}
 serde_json = "1"
