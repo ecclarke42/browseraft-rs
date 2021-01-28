@@ -4,6 +4,8 @@ version = "0.1.0"
 authors = ["Elliott Clarke <ecclarke42@gmail.com>"]
 edition = "2018"
 repository = "https://github.com/ecclarke42/browseraft-rs"
+license = "MIT"
+description = "A rust implementation of raft for the browser, using a BroadcastChannel for RPC"
 
 [dependencies]
 gloo = "0.2.1"
