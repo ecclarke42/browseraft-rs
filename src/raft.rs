@@ -35,7 +35,10 @@ impl Peer {
     }
 }
 
-impl Node {
+impl<T> Node<T>
+where
+    T: serde::ser::Serialize + serde::de::DeserializeOwned + 'static,
+{
     pub fn peer(&self) -> Peer {
         Peer(self.id)
     }
@@ -101,6 +104,8 @@ impl Node {
                 state.voted_for = Some(candidate);
                 state.election_task = Some(self.clone().new_election_task());
 
+                self.call_on_role_change(Role::Candidate);
+
                 self.send(
                     Message::VoteRequest {
                         term: state.term,
@@ -148,6 +153,8 @@ impl Node {
             state.voted_for = None;
             state.votes.clear();
             state.election_task = None;
+
+            self.call_on_role_change(Role::Leader);
         }
         self.send_heartbeat();
     }
@@ -207,6 +214,7 @@ impl Node {
                     state.role = Role::Follower;
                     state.voted_for = None;
                     state.votes.clear();
+                    self.call_on_role_change(Role::Follower);
                 }
             }
 
@@ -223,10 +231,13 @@ impl Node {
     }
 }
 
-impl Drop for Node {
+impl<T> Drop for Node<T>
+where
+    T: serde::ser::Serialize + serde::de::DeserializeOwned + 'static,
+{
     fn drop(&mut self) {
         self.stop();
-        self.send(Message::PeerRemoved, Recipient::Everyone)
+        self.send(Message::PeerRemoved, Recipient::Everyone) // TODO: replace peer-removed with a leader heartbeat response count
     }
 }
 

@@ -1,19 +1,20 @@
 use gloo::events::EventListener;
-use serde::{Deserialize, Serialize};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::{collections::HashSet, sync::Arc};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use web_sys::MessageEvent;
 
-use crate::NodeState;
-
-use super::{raft::Peer, Node};
+use super::{
+    raft::{Peer, Role},
+    Node,
+};
 
 #[derive(Serialize, Deserialize)]
-struct MessageWrapper {
+struct MessageWrapper<T> {
     from: Peer,
     to: Recipient,
-    msg: Message,
+    msg: Message<T>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -23,7 +24,7 @@ pub enum Recipient {
 }
 
 #[derive(Serialize, Deserialize)] //FromWasmAbi)]
-pub enum Message {
+pub enum Message<T> {
     PeerAdded,
     PeerRemoved,
     PeerSet(HashSet<Peer>),
@@ -43,9 +44,13 @@ pub enum Message {
     },
     // HeartbeatResponse,
     // Unknown,
+    Payload(T),
 }
 
-impl MessageWrapper {
+impl<T> MessageWrapper<T>
+where
+    T: Serialize + DeserializeOwned + 'static,
+{
     fn to_js(&self) -> JsValue {
         JsValue::from_serde(&self).expect("failed to serialize")
     }
@@ -55,8 +60,11 @@ impl MessageWrapper {
     }
 }
 
-impl Node {
-    pub(crate) fn send(&self, message: Message, to: Recipient) {
+impl<T> Node<T>
+where
+    T: serde::ser::Serialize + serde::de::DeserializeOwned + 'static,
+{
+    pub(crate) fn send(&self, message: Message<T>, to: Recipient) {
         let message = MessageWrapper {
             from: self.peer(),
             to,
@@ -77,7 +85,7 @@ impl Node {
         })
     }
 
-    fn on_message(self: Arc<Self>, wrapper: MessageWrapper) {
+    fn on_message(self: Arc<Self>, wrapper: MessageWrapper<T>) {
         let MessageWrapper { from, to, msg } = wrapper;
 
         if let Recipient::Peer(to) = to {
@@ -105,6 +113,7 @@ impl Node {
                     self.receive_vote(term, follower);
                 }
             }
+            Message::Payload(payload) => self.call_on_received(payload),
         }
     }
 }

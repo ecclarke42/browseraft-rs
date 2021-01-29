@@ -49,25 +49,28 @@ impl Component for App {
             Message::AddWorker => {
                 let id = self.rng.gen::<u32>();
                 let mut bridge = Worker::bridge(self.link.callback(Message::WorkerMessage));
-
-                bridge.send(worker::Input::InitializeNode(
-                    id,
-                    String::from("node-channel"),
-                ));
-
+                bridge.send(worker::Input::Initialize(id));
                 self.workers.insert(id, bridge);
+                self.states.insert(id, Role::Follower);
                 true
             }
 
             Message::RemoveWorker(id) => {
                 if let Some(mut bridge) = self.workers.remove(&id) {
-                    bridge.send(worker::Input::StopNode)
+                    bridge.send(worker::Input::Stop)
                 };
                 true
             }
 
             Message::WorkerMessage(msg) => match msg {
+                worker::Output::Message(_msg) => {
+                    //
+                    false
+                }
                 worker::Output::State(id, state) => {
+                    yew::services::ConsoleService::log(
+                        format!("worker message: {:?}, {:?}", id, state).as_str(),
+                    );
                     self.states.insert(id, state);
                     true
                 }
